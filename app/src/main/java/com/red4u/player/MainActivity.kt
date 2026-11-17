@@ -45,6 +45,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var playerView: PlayerView
     private var player: ExoPlayer? = null
     private var channels: List<Channel> = emptyList()
+    private val favorites = mutableSetOf<String>()
+    private var activeFilter = "all"
+    private var sortMode = 0
+    private lateinit var searchInput: EditText
+    private lateinit var countText: TextView
+    private lateinit var filterRow: LinearLayout
+    private lateinit var sortButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,88 +64,143 @@ class MainActivity : ComponentActivity() {
     private fun buildInterface() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(this@MainActivity.background)
-            setPadding(dp(16), dp(14), dp(16), dp(12))
+            setBackgroundColor(Color.rgb(8, 12, 19))
             layoutDirection = if (Locale.getDefault().language == "ar") View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
-
-        val heading = TextView(this).apply {
-            text = "RED4U"
-            textSize = 27f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(accent)
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(18), dp(16), dp(18), dp(14)); setBackgroundColor(Color.rgb(19, 27, 39))
         }
-        root.addView(heading, matchWrap())
+        val brand = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        brand.addView(TextView(this).apply {
+            text = "RED4U"; textSize = 29f; letterSpacing = .12f
+            typeface = Typeface.create("sans-serif-black", Typeface.BOLD); setTextColor(Color.rgb(30, 210, 125))
+        }, matchWrap())
+        brand.addView(TextView(this).apply {
+            text = if (Locale.getDefault().language == "ar") "عالم القنوات بين يديك" else "YOUR WORLD OF LIVE TV"
+            textSize = 10f; setTextColor(Color.LTGRAY)
+        }, matchWrap())
+        header.addView(brand, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(TextView(this).apply {
+            text = "● LIVE"; textSize = 11f; typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(30, 210, 125)); setPadding(dp(10), dp(7), dp(10), dp(7))
+            setBackgroundColor(Color.rgb(16, 57, 48))
+        }, LinearLayout.LayoutParams(-2, -2))
+        root.addView(header, matchWrap())
 
-        val subtitle = TextView(this).apply {
-            setText(R.string.tagline)
-            textSize = 13f
-            setTextColor(Color.LTGRAY)
-            setPadding(0, 0, 0, dp(12))
+        val scroll = ScrollView(this)
+        val body = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(18))
         }
-        root.addView(subtitle, matchWrap())
-
-        val sourceRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+        scroll.addView(body)
+        body.addView(sectionLabel(if (Locale.getDefault().language == "ar") "مصدر القنوات" else "PLAYLIST SOURCE"), matchWrap())
+        val sourceCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(10), dp(10), dp(10), dp(10))
+            setBackgroundColor(Color.rgb(19, 27, 39))
         }
         sourceInput = EditText(this).apply {
-            hint = getString(R.string.source_hint)
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.GRAY)
-            textSize = 13f
-            isSingleLine = true
-            setPadding(dp(10), 0, dp(10), 0)
-            setBackgroundColor(surface)
+            hint = getString(R.string.source_hint); setTextColor(Color.WHITE); setHintTextColor(Color.GRAY)
+            textSize = 13f; isSingleLine = true; setPadding(dp(12), 0, dp(12), 0)
+            setBackgroundColor(Color.rgb(8, 12, 19))
         }
-        sourceRow.addView(sourceInput, LinearLayout.LayoutParams(0, dp(50), 1f))
+        sourceCard.addView(sourceInput, LinearLayout.LayoutParams(-1, dp(48)))
+        val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val builtInButton = Button(this).apply {
-            setText(R.string.built_in)
-            setTextColor(Color.WHITE)
+            setText(R.string.built_in); setTextColor(Color.WHITE)
             setOnClickListener {
                 sourceInput.setText("")
                 getPreferences(MODE_PRIVATE).edit().remove("playlist_url").apply()
                 loadBuiltInPlaylist()
             }
         }
-        sourceRow.addView(builtInButton, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50)))
         val loadButton = Button(this).apply {
-            setText(R.string.load)
-            setTextColor(Color.BLACK)
-            setBackgroundTintList(android.content.res.ColorStateList.valueOf(accent))
+            setText(R.string.load); setTextColor(Color.BLACK)
+            setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(30, 210, 125)))
             setOnClickListener { loadPlaylist(sourceInput.text.toString().trim()) }
         }
-        sourceRow.addView(loadButton, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50)))
-        root.addView(sourceRow, matchWrap())
+        actions.addView(builtInButton, LinearLayout.LayoutParams(0, dp(46), 1f))
+        actions.addView(loadButton, LinearLayout.LayoutParams(0, dp(46), 1f))
+        sourceCard.addView(actions); body.addView(sourceCard, matchWrap())
 
         statusText = TextView(this).apply {
-            textSize = 12f
-            setTextColor(Color.LTGRAY)
-            setPadding(0, dp(8), 0, dp(8))
+            textSize = 12f; setTextColor(Color.LTGRAY); setPadding(0, dp(8), 0, dp(8))
         }
-        root.addView(statusText, matchWrap())
+        body.addView(statusText, matchWrap())
+        body.addView(sectionLabel(if (Locale.getDefault().language == "ar") "المشاهدة الآن" else "NOW PLAYING"), matchWrap())
+        playerView = PlayerView(this).apply { useController = true; setBackgroundColor(Color.BLACK) }
+        body.addView(playerView, LinearLayout.LayoutParams(-1, dp(220)))
 
-        playerView = PlayerView(this).apply {
-            useController = true
-            setBackgroundColor(Color.BLACK)
+        val titleRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        titleRow.addView(sectionLabel(if (Locale.getDefault().language == "ar") "استكشف القنوات" else "EXPLORE CHANNELS"),
+            LinearLayout.LayoutParams(0, -2, 1f))
+        countText = TextView(this).apply { textSize = 11f; setTextColor(Color.rgb(30, 210, 125)) }
+        titleRow.addView(countText, LinearLayout.LayoutParams(-2, -2)); body.addView(titleRow, matchWrap())
+
+        searchInput = EditText(this).apply {
+            hint = if (Locale.getDefault().language == "ar") "ابحث عن قناة..." else "Search channels..."
+            setTextColor(Color.WHITE); setHintTextColor(Color.GRAY); textSize = 14f; isSingleLine = true
+            setPadding(dp(12), 0, dp(12), 0); setBackgroundColor(Color.rgb(19, 27, 39))
+            addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { renderChannels() }
+                override fun afterTextChanged(s: android.text.Editable?) {}
+            })
         }
-        root.addView(playerView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(220)))
-
-        val channelHeading = TextView(this).apply {
-            setText(R.string.channels)
-            textSize = 18f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
-            setPadding(0, dp(14), 0, dp(8))
+        body.addView(searchInput, LinearLayout.LayoutParams(-1, dp(48)))
+        val filterScroll = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false }
+        filterRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(9), 0, dp(5)) }
+        filterScroll.addView(filterRow); body.addView(filterScroll, LinearLayout.LayoutParams(-1, dp(48)))
+        sortButton = Button(this).apply {
+            textSize = 11f; isAllCaps = false
+            setOnClickListener { sortMode = (sortMode + 1) % 3; updateSortLabel(); renderChannels() }
         }
-        root.addView(channelHeading, matchWrap())
-
-        val scroll = ScrollView(this)
+        body.addView(sortButton, LinearLayout.LayoutParams(-2, dp(42)))
         channelList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        scroll.addView(channelList)
-        root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        body.addView(channelList, matchWrap())
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f)); setContentView(root)
+        buildFilters(); updateSortLabel()
+    }
 
-        setContentView(root)
+    private fun sectionLabel(value: String) = TextView(this).apply {
+        text = value; textSize = 11f; letterSpacing = .08f; typeface = Typeface.DEFAULT_BOLD
+        setTextColor(Color.LTGRAY); setPadding(0, dp(9), 0, dp(8))
+    }
+
+    private fun buildFilters() {
+        filterRow.removeAllViews()
+        val labels = listOf(
+            "all" to if (Locale.getDefault().language == "ar") "الكل" else "ALL",
+            "algeria" to if (Locale.getDefault().language == "ar") "الجزائر" else "ALGERIA",
+            "arabic" to if (Locale.getDefault().language == "ar") "عربية" else "ARABIC",
+            "international" to if (Locale.getDefault().language == "ar") "دولية" else "INTERNATIONAL",
+            "favorites" to if (Locale.getDefault().language == "ar") "المفضلة ★" else "FAVORITES ★"
+        )
+        labels.forEach { pair ->
+            val chip = Button(this).apply {
+                text = pair.second; textSize = 10f; isAllCaps = false; setTextColor(Color.WHITE)
+                setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    if (activeFilter == pair.first) Color.rgb(20, 130, 82) else Color.rgb(35, 47, 63)))
+                setOnClickListener { activeFilter = pair.first; buildFilters(); renderChannels() }
+            }
+            filterRow.addView(chip, LinearLayout.LayoutParams(-2, dp(38)).apply { marginEnd = dp(5) })
+        }
+    }
+
+    private fun updateSortLabel() {
+        sortButton.text = when (sortMode) {
+            1 -> if (Locale.getDefault().language == "ar") "الترتيب الأصلي" else "SOURCE ORDER"
+            2 -> if (Locale.getDefault().language == "ar") "حسب التصنيف" else "BY CATEGORY"
+            else -> if (Locale.getDefault().language == "ar") "ترتيب أبجدي أ–ي" else "SORT A–Z"
+        }
+    }
+
+    private fun category(channel: Channel): String {
+        val value = (channel.name + " " + channel.group.orEmpty()).lowercase(Locale.ROOT)
+        return when {
+            listOf("alger", "algeria", "entv", "الجزائر", "جزائر").any { value.contains(it) } -> "algeria"
+            listOf("arab", "ara", "middle east", "mena", "عربي", "العربية", "السعودية", "مصر", "المغرب", "تونس").any { value.contains(it) } -> "arabic"
+            else -> "international"
+        }
     }
 
     private fun loadBuiltInPlaylist() {
@@ -238,21 +300,70 @@ class MainActivity : ComponentActivity() {
 
     private fun renderChannels() {
         channelList.removeAllViews()
-        channels.forEachIndexed { index, channel ->
-            val item = TextView(this).apply {
-                text = "${index + 1}.  ${channel.name}" +
-                    (channel.group?.let { "\n$it" } ?: "")
-                textSize = 15f
-                setTextColor(Color.WHITE)
-                setPadding(dp(14), dp(13), dp(14), dp(13))
-                setBackgroundColor(if (index % 2 == 0) surface else this@MainActivity.background)
-                isFocusable = true
-                isClickable = true
-                setOnClickListener { playChannel(channel) }
+        val query = searchInput.text.toString().trim().lowercase(Locale.ROOT)
+        var visible = channels.filter { channel ->
+            val matchesSearch = query.isBlank() || channel.name.lowercase(Locale.ROOT).contains(query) ||
+                channel.group.orEmpty().lowercase(Locale.ROOT).contains(query)
+            val type = category(channel)
+            val matchesFilter = when (activeFilter) {
+                "algeria" -> type == "algeria"
+                "arabic" -> type == "arabic"
+                "international" -> type == "international"
+                "favorites" -> favorites.contains(channel.streamUrl)
+                else -> true
             }
-            channelList.addView(item, LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(4) })
+            matchesSearch && matchesFilter
+        }
+        visible = when (sortMode) {
+            1 -> visible
+            2 -> visible.sortedWith(compareBy<Channel> { category(it) }.thenBy { it.name.lowercase(Locale.ROOT) })
+            else -> visible.sortedBy { it.name.lowercase(Locale.ROOT) }
+        }
+        countText.text = visible.size.toString() + (if (Locale.getDefault().language == "ar") " قناة" else " CHANNELS")
+        if (visible.isEmpty()) {
+            channelList.addView(TextView(this).apply {
+                text = if (Locale.getDefault().language == "ar") "لا توجد قنوات مطابقة" else "No matching channels"
+                setTextColor(Color.LTGRAY); gravity = Gravity.CENTER; textSize = 14f
+                setPadding(dp(15), dp(25), dp(15), dp(25))
+            }, matchWrap())
+            return
+        }
+        visible.forEachIndexed { index, channel ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                setBackgroundColor(if (index % 2 == 0) Color.rgb(19, 27, 39) else Color.rgb(13, 19, 28))
+                isFocusable = true; isClickable = true; setOnClickListener { playChannel(channel) }
+            }
+            row.addView(TextView(this).apply {
+                text = channel.name.take(1).uppercase(Locale.getDefault())
+                textSize = 19f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER
+                setTextColor(Color.rgb(30, 210, 125)); setBackgroundColor(Color.rgb(17, 63, 53))
+            }, LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginEnd = dp(10) })
+            val details = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            details.addView(TextView(this).apply {
+                text = channel.name; textSize = 14f; maxLines = 1
+                typeface = Typeface.DEFAULT_BOLD; setTextColor(Color.WHITE)
+            }, matchWrap())
+            details.addView(TextView(this).apply {
+                text = channel.group?.takeIf { it.isNotBlank() } ?: when (category(channel)) {
+                    "algeria" -> if (Locale.getDefault().language == "ar") "قنوات جزائرية" else "ALGERIAN"
+                    "arabic" -> if (Locale.getDefault().language == "ar") "قنوات عربية" else "ARABIC"
+                    else -> if (Locale.getDefault().language == "ar") "قنوات دولية" else "INTERNATIONAL"
+                }
+                textSize = 10f; setTextColor(Color.LTGRAY)
+            }, matchWrap())
+            row.addView(details, LinearLayout.LayoutParams(0, -2, 1f))
+            row.addView(TextView(this).apply {
+                text = if (favorites.contains(channel.streamUrl)) "★" else "☆"
+                textSize = 23f; gravity = Gravity.CENTER; setTextColor(Color.rgb(255, 194, 72))
+                isFocusable = true; isClickable = true
+                setOnClickListener {
+                    if (!favorites.add(channel.streamUrl)) favorites.remove(channel.streamUrl)
+                    renderChannels()
+                }
+            }, LinearLayout.LayoutParams(dp(38), dp(42)))
+            channelList.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(5) })
         }
     }
 
