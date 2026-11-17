@@ -35,7 +35,11 @@ class MainActivity : Activity() {
     private val background = Color.rgb(13, 17, 23)
     private val surface = Color.rgb(25, 31, 40)
     private val accent = Color.rgb(34, 197, 94)
-    private val builtInPlaylistUrl = "https://broadcastatlas.com/official.m3u"
+    private val builtInPlaylistUrls = listOf(
+        "https://iptv-org.github.io/iptv/countries/dz.m3u",
+        "https://iptv-org.github.io/iptv/languages/ara.m3u",
+        "https://broadcastatlas.com/official.m3u"
+    )
     private lateinit var sourceInput: EditText
     private lateinit var statusText: TextView
     private lateinit var channelList: LinearLayout
@@ -47,9 +51,8 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         buildInterface()
         val saved = getPreferences(MODE_PRIVATE).getString("playlist_url", "") ?: ""
-        val initialSource = saved.ifBlank { builtInPlaylistUrl }
-        sourceInput.setText(initialSource)
-        loadPlaylist(initialSource, saveAsLastUsed = saved.isNotBlank())
+        sourceInput.setText(saved)
+        if (saved.isNotBlank()) loadPlaylist(saved) else loadBuiltInPlaylist()
     }
 
     private fun buildInterface() {
@@ -94,9 +97,9 @@ class MainActivity : Activity() {
             setText(R.string.built_in)
             setTextColor(Color.WHITE)
             setOnClickListener {
-                sourceInput.setText(builtInPlaylistUrl)
+                sourceInput.setText("")
                 getPreferences(MODE_PRIVATE).edit().remove("playlist_url").apply()
-                loadPlaylist(builtInPlaylistUrl, saveAsLastUsed = false)
+                loadBuiltInPlaylist()
             }
         }
         sourceRow.addView(builtInButton, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50)))
@@ -137,6 +140,24 @@ class MainActivity : Activity() {
         root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
         setContentView(root)
+    }
+
+    private fun loadBuiltInPlaylist() {
+        statusText.setText(R.string.loading)
+        lifecycleScope.launch {
+            try {
+                val loadedLists = withContext(Dispatchers.IO) {
+                    builtInPlaylistUrls.map { address -> downloadText(address) }
+                }
+                channels = loadedLists.flatMap { parseM3u(it) }
+                    .distinctBy { it.streamUrl }
+                renderChannels()
+                statusText.text = if (channels.isEmpty()) getString(R.string.empty_list)
+                    else getString(R.string.loaded_count, channels.size)
+            } catch (error: Exception) {
+                statusText.setText(R.string.load_error)
+            }
+        }
     }
 
     private fun loadPlaylist(input: String, saveAsLastUsed: Boolean = true) {
