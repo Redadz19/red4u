@@ -95,6 +95,7 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             setOnClickListener {
                 sourceInput.setText(builtInPlaylistUrl)
+                getPreferences(MODE_PRIVATE).edit().remove("playlist_url").apply()
                 loadPlaylist(builtInPlaylistUrl, saveAsLastUsed = false)
             }
         }
