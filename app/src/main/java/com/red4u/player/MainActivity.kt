@@ -147,8 +147,11 @@ class MainActivity : Activity() {
         lifecycleScope.launch {
             try {
                 val loadedLists = withContext(Dispatchers.IO) {
-                    builtInPlaylistUrls.map { address -> downloadText(address) }
+                    builtInPlaylistUrls.mapNotNull { address ->
+                        runCatching { downloadText(address) }.getOrNull()
+                    }
                 }
+                if (loadedLists.isEmpty()) error("No built-in playlist source is available")
                 channels = loadedLists.flatMap { parseM3u(it) }
                     .distinctBy { it.streamUrl }
                 renderChannels()
