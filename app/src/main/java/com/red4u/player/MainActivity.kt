@@ -1,6 +1,7 @@
 package com.red4u.player
 
 import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -60,6 +61,7 @@ class MainActivity : ComponentActivity() {
         val saved = getPreferences(MODE_PRIVATE).getString("playlist_url", "") ?: ""
         sourceInput.setText(saved)
         if (saved.isNotBlank()) loadPlaylist(saved) else loadBuiltInPlaylist()
+        checkForUpdates(false)
     }
 
     private fun buildInterface() {
@@ -127,6 +129,13 @@ class MainActivity : ComponentActivity() {
             textSize = 12f; setTextColor(Color.LTGRAY); setPadding(0, dp(8), 0, dp(8))
         }
         body.addView(statusText, matchWrap())
+        val updateButton = Button(this).apply {
+            text = if (Locale.getDefault().language == "ar") "التحقق من التحديثات" else "CHECK FOR UPDATES"
+            isAllCaps = false
+            setTextColor(Color.WHITE)
+            setOnClickListener { checkForUpdates(true) }
+        }
+        body.addView(updateButton, LinearLayout.LayoutParams(-1, dp(44)))
         body.addView(sectionLabel(if (Locale.getDefault().language == "ar") "المشاهدة الآن" else "NOW PLAYING"), matchWrap())
         playerView = PlayerView(this).apply { useController = true; setBackgroundColor(Color.BLACK) }
         body.addView(playerView, LinearLayout.LayoutParams(-1, dp(220)))
@@ -160,6 +169,32 @@ class MainActivity : ComponentActivity() {
         body.addView(channelList, matchWrap())
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f)); setContentView(root)
         buildFilters(); updateSortLabel()
+    }
+
+    private fun checkForUpdates(showCurrent: Boolean) {
+        lifecycleScope.launch {
+            statusText.text = if (Locale.getDefault().language == "ar") "جارٍ التحقق من التحديثات..." else "Checking for updates..."
+            val release = runCatching {
+                val current = packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0.0"
+                AppUpdater.findUpdate(current)
+            }.getOrNull()
+            if (release == null) {
+                if (showCurrent) statusText.text = if (Locale.getDefault().language == "ar") "أنت تستخدم أحدث إصدار متاح." else "You are using the latest available version."
+                return@launch
+            }
+            val arabic = Locale.getDefault().language == "ar"
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle(if (arabic) "تحديث جديد متاح: ${release.version}" else "Update available: ${release.version}")
+                .setMessage(release.notes.ifBlank { if (arabic) "يتوفر إصدار جديد من RED4U." else "A new RED4U version is available." })
+                .setNegativeButton(if (arabic) "لاحقاً" else "Later", null)
+                .setPositiveButton(if (arabic) "تنزيل وتثبيت" else "Download & install") { _, _ ->
+                    lifecycleScope.launch {
+                        statusText.text = if (arabic) "جارٍ تنزيل التحديث..." else "Downloading update..."
+                        runCatching { AppUpdater.downloadAndInstall(this@MainActivity, release) }
+                            .onFailure { statusText.text = if (arabic) "تعذر تنزيل التحديث: ${it.message}" else "Update failed: ${it.message}" }
+                    }
+                }.show()
+        }
     }
 
     private fun sectionLabel(value: String) = TextView(this).apply {
