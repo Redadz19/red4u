@@ -1,8 +1,9 @@
 <resources>
     <string name="app_name">RED4U</string>
     <string name="tagline">التلفزيون المباشر كما تحب</string>
-    <string name="source_hint">ألصق رابط قائمة M3U من GitHub</string>
-    <string name="load">تحميل القنوات</string>
+    <string name="source_hint">ألصق رابط قائمة M3U أو M3U8</string>
+    <string name="built_in">المدمجة</string>
+    <string name="load">تحميل</string>
     <string name="refresh">تحديث</string>
     <string name="channels">القنوات</string>
     <string name="enter_url">أدخل رابط قائمة القنوات أولاً</string>
