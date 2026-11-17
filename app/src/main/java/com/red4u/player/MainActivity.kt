@@ -35,6 +35,7 @@ class MainActivity : Activity() {
     private val background = Color.rgb(13, 17, 23)
     private val surface = Color.rgb(25, 31, 40)
     private val accent = Color.rgb(34, 197, 94)
+    private val builtInPlaylistUrl = "https://broadcastatlas.com/official.m3u"
     private lateinit var sourceInput: EditText
     private lateinit var statusText: TextView
     private lateinit var channelList: LinearLayout
@@ -46,8 +47,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         buildInterface()
         val saved = getPreferences(MODE_PRIVATE).getString("playlist_url", "") ?: ""
-        sourceInput.setText(saved)
-        if (saved.isNotBlank()) loadPlaylist(saved)
+        val initialSource = saved.ifBlank { builtInPlaylistUrl }
+        sourceInput.setText(initialSource)
+        loadPlaylist(initialSource, saveAsLastUsed = saved.isNotBlank())
     }
 
     private fun buildInterface() {
@@ -88,6 +90,15 @@ class MainActivity : Activity() {
             setBackgroundColor(surface)
         }
         sourceRow.addView(sourceInput, LinearLayout.LayoutParams(0, dp(50), 1f))
+        val builtInButton = Button(this).apply {
+            setText(R.string.built_in)
+            setTextColor(Color.WHITE)
+            setOnClickListener {
+                sourceInput.setText(builtInPlaylistUrl)
+                loadPlaylist(builtInPlaylistUrl, saveAsLastUsed = false)
+            }
+        }
+        sourceRow.addView(builtInButton, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50)))
         val loadButton = Button(this).apply {
             setText(R.string.load)
             setTextColor(Color.BLACK)
@@ -127,13 +138,13 @@ class MainActivity : Activity() {
         setContentView(root)
     }
 
-    private fun loadPlaylist(input: String) {
+    private fun loadPlaylist(input: String, saveAsLastUsed: Boolean = true) {
         if (input.isBlank()) {
             statusText.setText(R.string.enter_url)
             return
         }
         val url = normalizeGithubUrl(input)
-        getPreferences(MODE_PRIVATE).edit().putString("playlist_url", input).apply()
+        if (saveAsLastUsed) getPreferences(MODE_PRIVATE).edit().putString("playlist_url", input).apply()
         statusText.setText(R.string.loading)
 
         lifecycleScope.launch {
