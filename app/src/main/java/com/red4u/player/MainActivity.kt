@@ -1,7 +1,7 @@
 package com.red4u.player
 
 import androidx.activity.ComponentActivity
-import androidx.appcompat.app.AlertDialog
+import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
