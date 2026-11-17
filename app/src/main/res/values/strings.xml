@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">RED4U</string>
+    <string name="tagline">Live TV, your way</string>
+    <string name="source_hint">Paste a GitHub M3U playlist URL</string>
+    <string name="load">Load channels</string>
+    <string name="refresh">Refresh</string>
+    <string name="channels">Channels</string>
+    <string name="enter_url">Enter a playlist URL first</string>
+    <string name="loading">Loading playlist…</string>
+    <string name="loaded_count">%1$d channels loaded</string>
+    <string name="load_error">Could not load playlist. Check the URL and try again.</string>
+    <string name="empty_list">No channels found in this playlist.</string>
+    <string name="now_playing">Now playing: %1$s</string>
+    <string name="source_saved">Playlist source saved</string>
+</resources>
