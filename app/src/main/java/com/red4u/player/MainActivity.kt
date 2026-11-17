@@ -1,6 +1,6 @@
 package com.red4u.player
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -12,7 +12,6 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
@@ -31,7 +30,7 @@ private data class Channel(
     val group: String? = null
 )
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     private val background = Color.rgb(13, 17, 23)
     private val surface = Color.rgb(25, 31, 40)
     private val accent = Color.rgb(34, 197, 94)
@@ -58,7 +57,7 @@ class MainActivity : Activity() {
     private fun buildInterface() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(background)
+            setBackgroundColor(this@MainActivity.background)
             setPadding(dp(16), dp(14), dp(16), dp(12))
             layoutDirection = if (Locale.getDefault().language == "ar") View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
@@ -88,7 +87,7 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             setHintTextColor(Color.GRAY)
             textSize = 13f
-            singleLine = true
+            isSingleLine = true
             setPadding(dp(10), 0, dp(10), 0)
             setBackgroundColor(surface)
         }
@@ -246,7 +245,7 @@ class MainActivity : Activity() {
                 textSize = 15f
                 setTextColor(Color.WHITE)
                 setPadding(dp(14), dp(13), dp(14), dp(13))
-                setBackgroundColor(if (index % 2 == 0) surface else background)
+                setBackgroundColor(if (index % 2 == 0) surface else this@MainActivity.background)
                 isFocusable = true
                 isClickable = true
                 setOnClickListener { playChannel(channel) }
