@@ -4,24 +4,25 @@ RED4U is an Android live-TV player for Android phones and Android TV. It loads M
 
 ## Current MVP
 - Arabic and English interface strings (follows the device language).
-- Built-in default channel catalog, loaded automatically on first launch.
-- Separate **Built-in** button to return to the default catalog at any time.
+- Built-in multi-source catalog loaded automatically on first launch.
+- Built-in catalog combines Algeria, Arabic-language, and international playlists.
+- Separate **Built-in** button returns to the default catalog at any time.
 - Manual M3U/M3U8 URL entry remains available; the last custom URL is remembered.
 - GitHub `blob` file links are converted to `raw.githubusercontent.com` automatically.
 - Parses channel names, `group-title`, and `tvg-logo` metadata.
 - HLS playback support through Media3.
 - Android phone and Android TV launcher entry points.
 
-## Built-in channel catalog
-The default catalog currently uses this public M3U feed:
+## Built-in channel sources
+The default catalog merges these public M3U sources and removes duplicate stream URLs:
 
-```
-https://broadcastatlas.com/official.m3u
-```
+- Algeria: `https://iptv-org.github.io/iptv/countries/dz.m3u`
+- Arabic-language channels: `https://iptv-org.github.io/iptv/languages/ara.m3u`
+- International free broadcaster streams: `https://broadcastatlas.com/official.m3u`
 
-The feed describes streams that are offered free on broadcasters' own websites and is maintained by a third party. RED4U does not host or relay those streams and is not affiliated with the feed provider or broadcasters. A stream being publicly accessible does not by itself establish a redistribution licence. Availability, geographic restrictions, and playback compatibility can change.
+These are third-party channel indexes. Public availability does not itself prove that a stream is licensed for redistribution or accessible in every country. RED4U does not host or relay video streams and is not affiliated with the listed broadcasters or playlist providers. Channel availability, geographic restrictions, and playback compatibility can change.
 
-The built-in catalog is fetched over the internet; it is not an offline bundle. The manual playlist field can be used instead with a personal or otherwise authorized M3U/M3U8 source.
+The built-in catalog is fetched over the internet; it is not an offline bundle. Users can instead enter a personal or otherwise authorized M3U/M3U8 URL in the manual field.
 
 ## Manual playlist URL
 A direct raw GitHub URL is recommended, for example:
