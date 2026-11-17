@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">RED4U</string>
+    <string name="tagline">التلفزيون المباشر كما تحب</string>
+    <string name="source_hint">ألصق رابط قائمة M3U من GitHub</string>
+    <string name="load">تحميل القنوات</string>
+    <string name="refresh">تحديث</string>
+    <string name="channels">القنوات</string>
+    <string name="enter_url">أدخل رابط قائمة القنوات أولاً</string>
+    <string name="loading">جارٍ تحميل القائمة…</string>
+    <string name="loaded_count">تم تحميل %1$d قناة</string>
+    <string name="load_error">تعذر تحميل القائمة. تحقق من الرابط وحاول مجدداً.</string>
+    <string name="empty_list">لم يتم العثور على قنوات في هذه القائمة.</string>
+    <string name="now_playing">يُعرض الآن: %1$s</string>
+    <string name="source_saved">تم حفظ مصدر القنوات</string>
+</resources>
